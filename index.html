@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Image Steganography</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/litera/bootstrap.min.css"
+    />
+  </head>
+
+  <body class="mt-4">
+    <div class="container">
+      <header class="row">
+        <div class="col-12">
+          <h1>Image steganography</h1>
+          <p class="lead">
+            This page implements the image steganography method proposed by
+            Chang et al. (2008), for educational purposes.
+          </p>
+          <p class="text-muted">
+            C. Chang, T. D. Kieu and Y. Chou, "A High Payload Steganographic
+            Scheme Based on (7, 4) Hamming Code for Digital Images," 2008
+            International Symposium on Electronic Commerce and Security,
+            Guangzhou City, 2008, pp. 16-21, doi:
+            <a href="https://ieeexplore.ieee.org/document/4606016"
+              >10.1109/ISECS.2008.222</a
+            >.
+          </p>
+        </div>
+      </header>
+
+      <section class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-12">
+                  <h5 class="card-title">Encode text inside an image</h5>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-12">
+                  <form>
+                    <div class="form-group">
+                      <label for="encode_image">Image</label>
+                      <div class="custom-file">
+                        <input
+                          type="file"
+                          class="custom-file-input"
+                          id="encode_image"
+                          name="encode_image"
+                          accept="image/*"
+                        />
+                        <label class="custom-file-label" for="encode_image"
+                          >Choose an image</label
+                        >
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="encode_msg">Message</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="encode_msg"
+                        name="encode_msg"
+                        placeholder="Enter a message to encode in the image"
+                      />
+                      <small id="encode_msg_help" class="form-text"
+                        >&nbsp;</small
+                      >
+                    </div>
+                  </form>
+                </div>
+              </div>
+              <div class="row d-none" id="results_row">
+                <div class="col-6 text-center p-3">
+                  <img class="mx-auto d-block w-100" id="encode_img_original" />
+                  <strong>Original</strong>
+                </div>
+                <div class="col-6 text-center p-3">
+                  <img class="mx-auto d-block w-100" id="encode_img_result" />
+                  <strong>Encoded</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="row mt-3">
+        <div class="col-12 text-muted text-right">
+          <small
+            ><a href="https://github.com/thepieterdc/steganograph"
+              >Source code hosted on GitHub</a
+            >
+            | &copy; 2020 Pieter De Clercq</small
+          >
+        </div>
+      </footer>
+    </div>
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/mathjs@8.0.1/lib/browser/math.js"
+    ></script>
+    <script type="text/javascript" src="base.js"></script>
+    <script type="text/javascript">
+      (function () {
+        const originalImage = document.getElementById("encode_img_original");
+        const encodedImage = document.getElementById("encode_img_result");
+        const message = document.getElementById("encode_msg");
+        const messageHelp = document.getElementById("encode_msg_help");
+        const resultsRow = document.getElementById("results_row");
+
+        function updateMessageHelp() {
+            const maxLength = maximumMessageLength(originalImage);
+            if (maxLength > 0) {
+              message.maxLength = maxLength;
+            }
+            
+            if (message.value.length > maxLength && maxLength > 0) {
+              messageHelp.classList.add("text-danger");
+              message.classList.add("is-invalid");
+            } else {
+              messageHelp.classList.remove("text-danger");
+              message.classList.remove("is-invalid");
+            }
+
+            messageHelp.innerText = `${message.value.length}/${maxLength} characters`;
+        }
+
+        function updateResultsRow() {
+          const show = originalImage.src && message.value.length > 0;
+          if (show) {
+            resultsRow.classList.remove("d-none");
+          } else {
+            resultsRow.classList.add("d-none");
+          }
+        }
+
+        document
+          .getElementById("encode_image")
+          .addEventListener("change", function () {
+            if (this.files && this.files[0]) {
+              originalImage.onload = function () {
+                updateMessageHelp();
+                updateResultsRow();
+                encode(originalImage, message.value, encodedImage);
+              };
+              originalImage.src = URL.createObjectURL(this.files[0]);
+            }
+          });
+
+        message.addEventListener("keyup", function () {
+          updateMessageHelp();
+          updateResultsRow();
+          encode(originalImage, message.value, encodedImage);
+        });
+      })();
+    </script>
+  </body>
+</html>
