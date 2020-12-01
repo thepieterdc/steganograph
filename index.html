@@ -75,7 +75,7 @@
                   </form>
                 </div>
               </div>
-              <div class="row d-none" id="results_row">
+              <div class="row d-none" id="encode_results_row">
                 <div class="col-6 text-center p-3">
                   <img class="mx-auto d-block w-100" id="encode_img_original" />
                   <strong>Original</strong>
@@ -90,14 +90,70 @@
         </div>
       </section>
 
+      <section class="row my-3">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-12">
+                  <h5 class="card-title">Decode text from an image</h5>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-12">
+                  <form>
+                    <div class="form-group">
+                      <label for="decode_image">Image</label>
+                      <div class="custom-file">
+                        <input
+                          type="file"
+                          class="custom-file-input"
+                          id="decode_image"
+                          name="decode_image"
+                          accept="image/*"
+                        />
+                        <label class="custom-file-label" for="decode_image"
+                          >Choose an image</label
+                        >
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="decode_msg">Message length</label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="decode_length"
+                        value="1"
+                        min="1"
+                        name="decode_length"
+                        step="1"
+                        placeholder="Enter the length of the message to decode"
+                      />
+                    </div>
+                  </form>
+                </div>
+              </div>
+              <div class="row d-none" id="decode_results_row">
+                <div class="col-12 text-center p-3">
+                  <blockquote
+                    class="blockquote"
+                    id="decode_results_container"
+                  ></blockquote>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <footer class="row mt-3">
         <div class="col-12 text-muted text-right">
-          <small
-            ><a href="https://github.com/thepieterdc/steganograph"
+          <small>
+            <a href="https://github.com/thepieterdc/steganograph"
               >Source code hosted on GitHub</a
             >
-            | &copy; 2020 Pieter De Clercq</small
-          >
+            | &copy; 2020 Pieter De Clercq
+          </small>
         </div>
       </footer>
     </div>
@@ -108,35 +164,53 @@
     <script type="text/javascript" src="base.js"></script>
     <script type="text/javascript">
       (function () {
+        const decodeImageHolder = new Image();
+        const decodeImage = document.getElementById("decode_image");
+        const decodeResultsRow = document.getElementById("decode_results_row");
+        const decodeResultsContainer = document.getElementById(
+          "decode_results_container"
+        );
         const originalImage = document.getElementById("encode_img_original");
         const encodedImage = document.getElementById("encode_img_result");
         const message = document.getElementById("encode_msg");
         const messageHelp = document.getElementById("encode_msg_help");
-        const resultsRow = document.getElementById("results_row");
+        const messageLength = document.getElementById("decode_length");
+        const encode_results_row = document.getElementById(
+          "encode_results_row"
+        );
 
         function updateMessageHelp() {
-            const maxLength = maximumMessageLength(originalImage);
-            if (maxLength > 0) {
-              message.maxLength = maxLength;
-            }
-            
-            if (message.value.length > maxLength && maxLength > 0) {
-              messageHelp.classList.add("text-danger");
-              message.classList.add("is-invalid");
-            } else {
-              messageHelp.classList.remove("text-danger");
-              message.classList.remove("is-invalid");
-            }
+          const maxLength = maximumMessageLength(originalImage);
+          if (maxLength > 0) {
+            message.maxLength = maxLength;
+          }
 
-            messageHelp.innerText = `${message.value.length}/${maxLength} characters`;
+          if (message.value.length > maxLength && maxLength > 0) {
+            messageHelp.classList.add("text-danger");
+            message.classList.add("is-invalid");
+          } else {
+            messageHelp.classList.remove("text-danger");
+            message.classList.remove("is-invalid");
+          }
+
+          messageHelp.innerText = `${message.value.length}/${maxLength} characters`;
         }
 
-        function updateResultsRow() {
+        function updateEncodeResultsRow() {
           const show = originalImage.src && message.value.length > 0;
           if (show) {
-            resultsRow.classList.remove("d-none");
+            encode_results_row.classList.remove("d-none");
           } else {
-            resultsRow.classList.add("d-none");
+            encode_results_row.classList.add("d-none");
+          }
+        }
+
+        function updateDecodeResultsRow() {
+          const show = decodeImageHolder.src && messageLength.value.length > 0;
+          if (show) {
+            decodeResultsRow.classList.remove("d-none");
+          } else {
+            decodeResultsRow.classList.add("d-none");
           }
         }
 
@@ -146,17 +220,40 @@
             if (this.files && this.files[0]) {
               originalImage.onload = function () {
                 updateMessageHelp();
-                updateResultsRow();
+                updateEncodeResultsRow();
                 encode(originalImage, message.value, encodedImage);
               };
               originalImage.src = URL.createObjectURL(this.files[0]);
             }
           });
 
-        message.addEventListener("keyup", function () {
+        message.addEventListener("keyup", () => {
           updateMessageHelp();
-          updateResultsRow();
+          updateEncodeResultsRow();
           encode(originalImage, message.value, encodedImage);
+        });
+
+        decodeImage.addEventListener("change", function () {
+          if (this.files && this.files[0]) {
+            decodeImageHolder.onload = function () {
+              updateDecodeResultsRow();
+              decode(
+                decodeImageHolder,
+                messageLength.value,
+                decodeResultsContainer
+              );
+            };
+            decodeImageHolder.src = URL.createObjectURL(this.files[0]);
+          }
+        });
+
+        messageLength.addEventListener("keyup", () => {
+          updateDecodeResultsRow();
+          decode(
+            decodeImageHolder,
+            messageLength.value,
+            decodeResultsContainer
+          );
         });
       })();
     </script>

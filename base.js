@@ -61,6 +61,61 @@ function createBitGroups() {
 }
 
 /**
+ * Decodes the given image to find the message.
+ *
+ * @param {HTMLImageElement} image the original image element
+ * @param {string} messageLength the length of the message to decode
+ * @param {HTMLElement} resultsContainer the element to write the result to
+ */
+function decode(image, messageLength, resultsContainer) {
+  // Validate input arguments.
+  if (!image.src || messageLength.length === 0) {
+    return;
+  }
+
+  // Get the input data.
+  const W = image.naturalWidth;
+  const H = image.naturalHeight;
+  messageLength = parseInt(messageLength);
+
+  // Get the image data.
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(image, 0, 0);
+  const imageData = ctx.getImageData(0, 0, W, H).data;
+
+  // Create the Hamming (7, 4) parity matrix.
+  const H74 = math.matrix(hamming74ParityMatrix);
+
+  // Iterate over the letters to decode.
+  let result = "";
+  for (let i = 0; i < messageLength; ++i) {
+    // Read the next 7 pixel LSB's into a bitvector.
+    const p1 = imageData[7 * i] & 1;
+    const p2 = imageData[7 * i + 1] & 1;
+    const p3 = imageData[7 * i + 2] & 1;
+    const p4 = imageData[7 * i + 3] & 1;
+    const p5 = imageData[7 * i + 4] & 1;
+    const p6 = imageData[7 * i + 5] & 1;
+    const p7 = imageData[7 * i + 6] & 1;
+    const lsbs = [p1, p2, p3, p4, p5, p6, p7];
+
+    // Calculate the syndrome vector.
+    const syndrome = math.multiply(H74, lsbs).valueOf().map((i) => i % 2);
+    
+    // Reconstruct the encoded letter.
+    const lvec = [syndrome[0], syndrome[1], p3, syndrome[2], p5, p6, p7];
+    const l = (lvec[6] << 6) | (lvec[5] << 5) | (lvec[4] << 4) | (lvec[3] << 3) | (lvec[2] << 2) | (lvec[1] << 1) | (lvec[0]);
+    result += String.fromCharCode(l);
+  }
+
+  // Set the result message.
+  resultsContainer.innerText = result;
+}
+
+/**
  * Encodes the given message in the image.
  *
  * @param {HTMLImageElement} image the original image element
